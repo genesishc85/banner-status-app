@@ -262,10 +262,19 @@ document.getElementById('f-사진원면').addEventListener('change', async e=>{
   document.getElementById('thumb-원면').innerHTML = `<img src="${pendingPhoto['현장사진(원면)']}">`;
 });
 
+function todayYYYYMMDD(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}${m}${day}`;
+}
+
 function clearAddForm(){
-  ['f-분류','f-항목장소','f-매체형태','f-규격','f-수량','f-담당','f-배너현황','f-최종점검일','f-코멘트'].forEach(id=>{
+  ['f-분류','f-항목장소','f-매체형태','f-규격','f-수량','f-담당','f-배너현황','f-코멘트'].forEach(id=>{
     document.getElementById(id).value = '';
   });
+  document.getElementById('f-최종점검일').value = todayYYYYMMDD();
   document.getElementById('f-통행량').value = '';
   document.getElementById('f-오류확인').value = '';
   pendingPhoto = { '현장사진(정면)': null, '현장사진(원면)': null };
@@ -533,8 +542,7 @@ document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape') closeLightbox();
   if(e.key==='ArrowLeft') lightboxPrev();
   if(e.key==='ArrowRight') lightboxNext();
-});
-
+document.getElementById('f-최종점검일').value = todayYYYYMMDD();
 loadRows();
 </script>
 </body>
