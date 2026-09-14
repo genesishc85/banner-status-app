@@ -2,59 +2,463 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>배너현황</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a1d24">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+</script>
 <style>
-  body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #1a1d24;
-    color: #e5e7eb;
-    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
-    text-align: center;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-  .box { max-width: 320px; }
-  h1 { color: #93c5fd; font-size: 18px; margin-bottom: 8px; }
-  p { font-size: 13px; color: #9ca3af; line-height: 1.6; }
-  a {
-    display: inline-block;
-    margin-top: 16px;
-    background: #2563eb;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-  }
+:root{
+  --bg:#1a1d24; --card:#20242c; --card2:#242832; --border:#2c313c; --border-strong:#374151;
+  --text:#e6e6e6; --text2:#9aa0a8; --muted:#6b7280;
+  --accent:#3b82f6; --accent-hover:#2563eb; --accent-title:#93c5fd;
+  --danger:#dc2626; --danger-hover:#b91c1c;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,"Malgun Gothic",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 80px;}
+.site-bar{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;margin-bottom:20px;border-bottom:1px solid var(--border);}
+.site-title{font-size:16px;font-weight:700;color:var(--accent-title);}
+.site-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.tabs{display:flex;gap:6px;margin-bottom:16px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:10;}
+.tab{flex:1;text-align:center;padding:10px 4px;border-radius:8px;border:1px solid var(--border);background:var(--card2);font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;}
+.tab.active{background:rgba(59,130,246,0.15);color:var(--accent-title);border-color:var(--accent);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
+label{display:block;font-size:12px;color:var(--text2);margin:12px 0 4px;font-weight:500;}
+label:first-child{margin-top:0;}
+input,select,textarea{width:100%;padding:10px 12px;font-size:15px;border:1px solid var(--border-strong);border-radius:8px;background:var(--card2);color:var(--text);font-family:inherit;}
+input::placeholder,textarea::placeholder{color:var(--muted);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+textarea{min-height:56px;resize:vertical;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;border:none;background:var(--card2);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;}
+.btn:hover{color:var(--text);background:#2c313c;}
+.btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:16px;padding:13px;font-size:15px;}
+.btn-primary:hover{background:var(--accent-hover);color:#fff;}
+.btn-sm{padding:6px 10px;font-size:13px;}
+.err{color:#f87171;font-size:12px;margin-top:4px;display:none;}
+.search{margin-bottom:12px;}
+.checkbox-grid{display:flex;flex-wrap:wrap;gap:8px 14px;}
+.checkbox-grid label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);margin:0;font-weight:400;}
+.checkbox-grid input[type=checkbox]{width:auto;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.stat .n{font-size:20px;font-weight:600;color:var(--text);}
+.stat .l{font-size:11px;color:var(--text2);margin-top:2px;}
+.item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;}
+.item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.item-name{font-size:15px;font-weight:500;color:var(--text);}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;background:var(--card2);color:var(--text2);margin-left:6px;vertical-align:middle;}
+.badge.type{background:rgba(59,130,246,0.15);color:var(--accent-title);}
+.item-status{font-size:13px;color:var(--text2);margin-top:6px;white-space:pre-line;}
+.item-date{font-size:11px;color:var(--muted);margin-top:6px;}
+.detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:none;}
+.detail.open{display:block;}
+.thumb-row{display:flex;gap:8px;margin-top:8px;}
+.thumb-row img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border);background:var(--card2);}
+.photo-input-row{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:40px 20px;}
+.empty .big{font-size:32px;margin-bottom:8px;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border-strong);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;}
+.toast.show{opacity:1;}
+.loading-note{color:var(--muted);font-size:13px;text-align:center;padding:20px;}
 </style>
 </head>
 <body>
-  <div class="box">
-    <h1>배너현황</h1>
-    <p id="msg">사내망 접속 중... 잠시만 기다려주세요</p>
-    <a id="link" href="http://10.10.11.252/banner/">지금 바로 열기</a>
+<div class="wrap">
+  <div class="site-bar">
+    <div>
+      <div class="site-title">배너현황</div>
+      <div class="site-sub">등록 / 목록</div>
+    </div>
   </div>
 
-<script>
-  // 사내 서버로 자동 이동 시도. 실패하면 위 링크로 수동 접속 안내.
-  const target = "http://10.10.11.252/banner/";
-  fetch(target, { mode: "no-cors" })
-    .then(() => { window.location.href = target; })
-    .catch(() => {
-      document.getElementById("msg").textContent =
-        "사내 와이파이에 연결되어 있어야 접속할 수 있습니다. 연결 확인 후 아래 버튼을 눌러주세요.";
-    });
+  <div class="tabs">
+    <div class="tab active" data-tab="add">등록</div>
+    <div class="tab" data-tab="list">목록</div>
+  </div>
 
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
+  <!-- 등록 -->
+  <div id="tab-add">
+    <div class="card">
+      <label>분류</label>
+      <input id="f-분류" placeholder="예: 현장 시설">
+
+      <label>항목/장소 *</label>
+      <input id="f-항목장소" placeholder="예: 웰컴센터">
+      <div class="err" id="err-항목장소">항목/장소를 입력하세요</div>
+
+      <label>매체/형태</label>
+      <input id="f-매체형태" placeholder="예: 배너, POP, 현수막 등">
+
+      <div class="row2">
+        <div>
+          <label>규격</label>
+          <input id="f-규격" placeholder="예: 600*1800">
+        </div>
+        <div>
+          <label>수량</label>
+          <input id="f-수량" placeholder="예: 2개">
+        </div>
+      </div>
+
+      <label>담당/관리 포인트</label>
+      <input id="f-담당" placeholder="담당자, 관리 포인트">
+
+      <label>배너현황 (내용)</label>
+      <textarea id="f-배너현황" placeholder="현재 노출 중인 내용"></textarea>
+
+      <div class="row2">
+        <div>
+          <label>통행량</label>
+          <select id="f-통행량">
+            <option value="">-</option>
+            <option value="상">상</option>
+            <option value="중">중</option>
+            <option value="하">하</option>
+          </select>
+        </div>
+        <div>
+          <label>최종점검일</label>
+          <input id="f-최종점검일" placeholder="예: 20260914">
+        </div>
+      </div>
+
+      <label>오류 확인</label>
+      <select id="f-오류확인">
+        <option value="">-</option>
+        <option value="TRUE">TRUE</option>
+        <option value="FALSE">FALSE</option>
+      </select>
+
+      <label>개선제안/코멘트</label>
+      <textarea id="f-코멘트" placeholder="비고, 특이사항"></textarea>
+
+      <label>현장사진(정면)</label>
+      <div class="photo-input-row"><input type="file" id="f-사진정면" accept="image/*"></div>
+      <div class="thumb-row" id="thumb-정면"></div>
+
+      <label>현장사진(원면)</label>
+      <div class="photo-input-row"><input type="file" id="f-사진원면" accept="image/*"></div>
+      <div class="thumb-row" id="thumb-원면"></div>
+
+      <div class="err" id="err-general" style="display:none;"></div>
+      <button class="btn btn-primary" id="save-btn">등록</button>
+    </div>
+  </div>
+
+  <!-- 목록 -->
+  <div id="tab-list" style="display:none;">
+    <input class="search" id="search" placeholder="검색 (분류, 항목/장소, 배너현황 등)">
+    <div class="stats" id="stats"></div>
+    <div id="list-body"><div class="loading-note">불러오는 중...</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2u9jaU8BbPQ8FDGaBqF65pB8RUbOfsYF3SgaaZEz8xNh82C--cV8AY0VGfwNcp45c/exec';
+
+const FIXED_FIELDS = ['분류','항목/장소','매체/형태','규격 (px/mm)','수량','담당/관리 포인트',
+  '현장사진(정면)','현장사진(원면)','배너현황','통행량(상/중/하)','오류 확인','최종점검일','개선제안/코멘트'];
+
+let rows = [];
+let campaignNames = [];
+let pendingPhoto = { '현장사진(정면)': null, '현장사진(원면)': null };
+let openRow = null;
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.getElementById('tab-add').style.display = name==='add' ? '' : 'none';
+  document.getElementById('tab-list').style.display = name==='list' ? '' : 'none';
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>switchTab(t.dataset.tab)));
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+async function loadRows(){
+  try{
+    const res = await fetch(APPS_SCRIPT_URL);
+    const data = await res.json();
+    if(!data.ok){ showToast('불러오기 실패: ' + data.error); return; }
+    rows = data.rows || [];
+    if(rows.length > 0){
+      campaignNames = Object.keys(rows[0]).filter(k => k !== 'row' && k !== 'id' && FIXED_FIELDS.indexOf(k) === -1);
+    }
+    renderList();
+  }catch(e){
+    document.getElementById('list-body').innerHTML = '<div class="loading-note">불러오기 실패: '+e+'</div>';
   }
+}
+
+function compressImage(file, maxDim=900, quality=0.6){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w=img.width, h=img.height;
+        if(w>h){ if(w>maxDim){h=Math.round(h*maxDim/w); w=maxDim;} }
+        else{ if(h>maxDim){w=Math.round(w*maxDim/h); h=maxDim;} }
+        const canvas = document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error('이미지를 불러올 수 없습니다'));
+      img.src = e.target.result;
+    };
+    reader.onerror = ()=>reject(new Error('파일을 읽을 수 없습니다'));
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('f-사진정면').addEventListener('change', async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  pendingPhoto['현장사진(정면)'] = await compressImage(file);
+  document.getElementById('thumb-정면').innerHTML = `<img src="${pendingPhoto['현장사진(정면)']}">`;
+});
+document.getElementById('f-사진원면').addEventListener('change', async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  pendingPhoto['현장사진(원면)'] = await compressImage(file);
+  document.getElementById('thumb-원면').innerHTML = `<img src="${pendingPhoto['현장사진(원면)']}">`;
+});
+
+function clearAddForm(){
+  ['f-분류','f-항목장소','f-매체형태','f-규격','f-수량','f-담당','f-배너현황','f-최종점검일','f-코멘트'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-통행량').value = '';
+  document.getElementById('f-오류확인').value = '';
+  pendingPhoto = { '현장사진(정면)': null, '현장사진(원면)': null };
+  document.getElementById('thumb-정면').innerHTML = '';
+  document.getElementById('thumb-원면').innerHTML = '';
+  document.getElementById('f-사진정면').value = '';
+  document.getElementById('f-사진원면').value = '';
+}
+
+document.getElementById('save-btn').addEventListener('click', async ()=>{
+  const 항목장소 = document.getElementById('f-항목장소').value.trim();
+  document.getElementById('err-항목장소').style.display = 항목장소 ? 'none' : 'block';
+  if(!항목장소) return;
+
+  const fields = {
+    '분류': document.getElementById('f-분류').value.trim(),
+    '항목/장소': 항목장소,
+    '매체/형태': document.getElementById('f-매체형태').value.trim(),
+    '규격 (px/mm)': document.getElementById('f-규격').value.trim(),
+    '수량': document.getElementById('f-수량').value.trim(),
+    '담당/관리 포인트': document.getElementById('f-담당').value.trim(),
+    '배너현황': document.getElementById('f-배너현황').value.trim(),
+    '통행량(상/중/하)': document.getElementById('f-통행량').value,
+    '오류 확인': document.getElementById('f-오류확인').value,
+    '최종점검일': document.getElementById('f-최종점검일').value.trim(),
+    '개선제안/코멘트': document.getElementById('f-코멘트').value.trim(),
+  };
+  if(pendingPhoto['현장사진(정면)']) fields['현장사진(정면)'] = pendingPhoto['현장사진(정면)'];
+  if(pendingPhoto['현장사진(원면)']) fields['현장사진(원면)'] = pendingPhoto['현장사진(원면)'];
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '등록 중...';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'register', fields })
+    });
+    const data = await res.json();
+    if(data.ok){
+      showToast('등록되었습니다');
+      clearAddForm();
+      loadRows();
+    }else{
+      showToast('등록 실패: ' + data.error);
+    }
+  }catch(e){
+    showToast('등록 실패: ' + e);
+  }
+  btn.disabled = false; btn.textContent = '등록';
+});
+
+function renderList(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const filtered = rows.filter(r=>{
+    if(!q) return true;
+    const hay = FIXED_FIELDS.map(f=>r[f]||'').join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="n">${rows.length}</div><div class="l">전체</div></div>
+    <div class="stat"><div class="n">${filtered.length}</div><div class="l">검색결과</div></div>
+    <div class="stat"><div class="n">${campaignNames.length}</div><div class="l">캠페인 컬럼</div></div>
+  `;
+
+  const body = document.getElementById('list-body');
+  if(filtered.length===0){
+    body.innerHTML = `<div class="empty"><div class="big">🗂️</div>${rows.length===0 ? '표시할 배너가 없습니다.' : '조건에 맞는 배너가 없습니다.'}</div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map(r => renderItem(r)).join('');
+}
+
+function renderItem(r){
+  const isOpen = openRow === r.row;
+  const photos = [r['현장사진(정면)'], r['현장사진(원면)']].filter(Boolean);
+  const photoHtml = photos.length ? `<div class="thumb-row">${photos.map(u=>`<img src="${escapeHtml(u)}">`).join('')}</div>` : '';
+
+  return `
+    <div class="item" onclick="toggleItem(${r.row})">
+      <div class="item-top">
+        <div style="flex:1;min-width:0;">
+          <span class="item-name">${escapeHtml(r['항목/장소']) || '(이름 없음)'}</span>
+          ${r['분류'] ? `<span class="badge type">${escapeHtml(r['분류'])}</span>` : ''}
+          ${r['매체/형태'] ? `<span class="badge">${escapeHtml(r['매체/형태'])}</span>` : ''}
+        </div>
+      </div>
+      <div class="item-status">${escapeHtml(r['배너현황']) || '-'}</div>
+      <div class="item-date">통행량: ${escapeHtml(r['통행량(상/중/하)']) || '-'} · 최종점검일: ${escapeHtml(r['최종점검일']) || '-'}</div>
+      ${photoHtml}
+      <div class="detail ${isOpen ? 'open' : ''}" id="detail-${r.row}" onclick="event.stopPropagation()">
+        ${isOpen ? renderEditForm(r) : ''}
+      </div>
+    </div>
+  `;
+}
+
+function toggleItem(row){
+  openRow = (openRow === row) ? null : row;
+  renderList();
+}
+
+function renderEditForm(r){
+  const campaignChecks = campaignNames.map(name => `
+    <label><input type="checkbox" class="edit-camp" data-name="${escapeHtml(name)}" ${r[name]==='TRUE'?'checked':''}> ${escapeHtml(name)}</label>
+  `).join('');
+
+  return `
+    <label>분류</label>
+    <input id="e-분류-${r.row}" value="${escapeHtml(r['분류'])}">
+    <label>항목/장소</label>
+    <input id="e-항목장소-${r.row}" value="${escapeHtml(r['항목/장소'])}">
+    <label>매체/형태</label>
+    <input id="e-매체형태-${r.row}" value="${escapeHtml(r['매체/형태'])}">
+    <div class="row2">
+      <div><label>규격</label><input id="e-규격-${r.row}" value="${escapeHtml(r['규격 (px/mm)'])}"></div>
+      <div><label>수량</label><input id="e-수량-${r.row}" value="${escapeHtml(r['수량'])}"></div>
+    </div>
+    <label>담당/관리 포인트</label>
+    <input id="e-담당-${r.row}" value="${escapeHtml(r['담당/관리 포인트'])}">
+    <label>배너현황</label>
+    <textarea id="e-배너현황-${r.row}">${escapeHtml(r['배너현황'])}</textarea>
+    <div class="row2">
+      <div><label>통행량</label>
+        <select id="e-통행량-${r.row}">
+          <option value="" ${!r['통행량(상/중/하)']?'selected':''}>-</option>
+          <option value="상" ${r['통행량(상/중/하)']==='상'?'selected':''}>상</option>
+          <option value="중" ${r['통행량(상/중/하)']==='중'?'selected':''}>중</option>
+          <option value="하" ${r['통행량(상/중/하)']==='하'?'selected':''}>하</option>
+        </select>
+      </div>
+      <div><label>최종점검일</label><input id="e-최종점검일-${r.row}" value="${escapeHtml(r['최종점검일'])}"></div>
+    </div>
+    <label>오류 확인</label>
+    <select id="e-오류확인-${r.row}">
+      <option value="" ${!r['오류 확인']?'selected':''}>-</option>
+      <option value="TRUE" ${r['오류 확인']==='TRUE'?'selected':''}>TRUE</option>
+      <option value="FALSE" ${r['오류 확인']==='FALSE'?'selected':''}>FALSE</option>
+    </select>
+    <label>개선제안/코멘트</label>
+    <textarea id="e-코멘트-${r.row}">${escapeHtml(r['개선제안/코멘트'])}</textarea>
+
+    <label>현장사진(정면) 교체</label>
+    <div class="photo-input-row"><input type="file" accept="image/*" onchange="handleEditPhoto(event, ${r.row}, '현장사진(정면)')"></div>
+    <div class="thumb-row" id="e-thumb-정면-${r.row}">${r['현장사진(정면)'] ? `<img src="${escapeHtml(r['현장사진(정면)'])}">` : ''}</div>
+
+    <label>현장사진(원면) 교체</label>
+    <div class="photo-input-row"><input type="file" accept="image/*" onchange="handleEditPhoto(event, ${r.row}, '현장사진(원면)')"></div>
+    <div class="thumb-row" id="e-thumb-원면-${r.row}">${r['현장사진(원면)'] ? `<img src="${escapeHtml(r['현장사진(원면)'])}">` : ''}</div>
+
+    ${campaignNames.length ? `<label>노출 캠페인</label><div class="checkbox-grid">${campaignChecks}</div>` : ''}
+
+    <button class="btn btn-primary" onclick="saveEdit(${r.row})">저장</button>
+    <div id="edit-status-${r.row}" style="font-size:12px;color:var(--accent-title);margin-top:6px;"></div>
+  `;
+}
+
+const editPhotoPending = {};
+async function handleEditPhoto(e, row, field){
+  const file = e.target.files[0]; if(!file) return;
+  const dataUrl = await compressImage(file);
+  editPhotoPending[row + ':' + field] = dataUrl;
+  const wrapId = field === '현장사진(정면)' ? `e-thumb-정면-${row}` : `e-thumb-원면-${row}`;
+  document.getElementById(wrapId).innerHTML = `<img src="${dataUrl}">`;
+}
+
+async function saveEdit(row){
+  const statusEl = document.getElementById('edit-status-' + row);
+  statusEl.textContent = '저장 중...';
+
+  const fields = {
+    '분류': document.getElementById('e-분류-'+row).value.trim(),
+    '항목/장소': document.getElementById('e-항목장소-'+row).value.trim(),
+    '매체/형태': document.getElementById('e-매체형태-'+row).value.trim(),
+    '규격 (px/mm)': document.getElementById('e-규격-'+row).value.trim(),
+    '수량': document.getElementById('e-수량-'+row).value.trim(),
+    '담당/관리 포인트': document.getElementById('e-담당-'+row).value.trim(),
+    '배너현황': document.getElementById('e-배너현황-'+row).value.trim(),
+    '통행량(상/중/하)': document.getElementById('e-통행량-'+row).value,
+    '오류 확인': document.getElementById('e-오류확인-'+row).value,
+    '최종점검일': document.getElementById('e-최종점검일-'+row).value.trim(),
+    '개선제안/코멘트': document.getElementById('e-코멘트-'+row).value.trim(),
+  };
+  document.querySelectorAll(`#detail-${row} .edit-camp`).forEach(chk=>{
+    fields[chk.dataset.name] = chk.checked ? 'TRUE' : 'FALSE';
+  });
+  if(editPhotoPending[row+':현장사진(정면)']) fields['현장사진(정면)'] = editPhotoPending[row+':현장사진(정면)'];
+  if(editPhotoPending[row+':현장사진(원면)']) fields['현장사진(원면)'] = editPhotoPending[row+':현장사진(원면)'];
+
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'edit', row, fields })
+    });
+    const data = await res.json();
+    if(data.ok){
+      statusEl.textContent = '저장됨';
+      showToast('저장되었습니다');
+      await loadRows();
+    }else{
+      statusEl.textContent = '저장 실패: ' + data.error;
+    }
+  }catch(e){
+    statusEl.textContent = '저장 실패: ' + e;
+  }
+}
+
+document.getElementById('search').addEventListener('input', renderList);
+
+loadRows();
 </script>
 </body>
 </html>
