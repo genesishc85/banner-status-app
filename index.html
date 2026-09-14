@@ -411,7 +411,7 @@ function renderEditForm(r){
           <option value="하" ${r['통행량(상/중/하)']==='하'?'selected':''}>하</option>
         </select>
       </div>
-      <div><label>최종점검일</label><input id="e-최종점검일-${r.row}" value="${escapeHtml(r['최종점검일'])}"></div>
+      <div><label>최종점검일 (수정 시 자동으로 오늘 날짜)</label><input id="e-최종점검일-${r.row}" value="${todayYYYYMMDD()}" readonly style="opacity:0.7;"></div>
     </div>
     <label>오류 확인</label>
     <select id="e-오류확인-${r.row}">
@@ -434,7 +434,35 @@ function renderEditForm(r){
 
     <button class="btn btn-primary" onclick="saveEdit(${r.row})">저장</button>
     <div id="edit-status-${r.row}" style="font-size:12px;color:var(--accent-title);margin-top:6px;"></div>
+
+    <button class="btn btn-sm" style="width:100%;margin-top:10px;" onclick="loadHistory(${r.row}, '${r.id || ""}')">히스토리 보기</button>
+    <div id="history-${r.row}" style="margin-top:8px;"></div>
   `;
+}
+
+async function loadHistory(row, id){
+  const box = document.getElementById('history-' + row);
+  if(!id){
+    box.innerHTML = '<div class="loading-note">이 항목은 아직 id가 없어 이력을 조회할 수 없습니다. 한 번 저장한 뒤 다시 시도해주세요.</div>';
+    return;
+  }
+  box.innerHTML = '<div class="loading-note">불러오는 중...</div>';
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=history&id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    if(!data.ok){ box.innerHTML = '히스토리 조회 실패: ' + data.error; return; }
+    if(data.history.length === 0){ box.innerHTML = '<div class="loading-note">이전 수정 이력이 없습니다.</div>'; return; }
+    box.innerHTML = data.history.map(h => `
+      <div style="border-top:1px solid var(--border);padding:8px 0;font-size:12px;color:var(--text2);">
+        <div style="color:var(--muted);">${escapeHtml(h['수정일시'])}</div>
+        <div style="color:var(--text);margin-top:2px;">${escapeHtml(h['배너현황']) || '-'}</div>
+        <div>통행량: ${escapeHtml(h['통행량(상/중/하)']) || '-'} · 최종점검일: ${escapeHtml(h['최종점검일']) || '-'}</div>
+        ${h['개선제안/코멘트'] ? `<div>${escapeHtml(h['개선제안/코멘트'])}</div>` : ''}
+      </div>
+    `).join('');
+  }catch(e){
+    box.innerHTML = '히스토리 조회 실패: ' + e;
+  }
 }
 
 const editPhotoPending = {};
