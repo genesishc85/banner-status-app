@@ -68,6 +68,16 @@ textarea{min-height:56px;resize:vertical;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border-strong);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;}
 .toast.show{opacity:1;}
 .loading-note{color:var(--muted);font-size:13px;text-align:center;padding:20px;}
+.photo-thumb-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.photo-thumb-row img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--card2);}
+.lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;visibility:hidden;transition:opacity .22s ease;}
+.lightbox-overlay.show{opacity:1;visibility:visible;}
+.lightbox-img{max-width:90vw;max-height:75vh;border-radius:10px;object-fit:contain;transform:scale(0.96);opacity:0;transition:opacity .22s ease,transform .22s ease;}
+.lightbox-overlay.show .lightbox-img{transform:scale(1);opacity:1;}
+.lightbox-bar{display:flex;align-items:center;gap:20px;margin-top:16px;}
+.lightbox-nav{width:42px;height:42px;border-radius:50%;background:var(--card2);border:1px solid var(--border-strong);color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.lightbox-count{color:var(--text2);font-size:13px;min-width:50px;text-align:center;}
+.lightbox-close{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:50%;background:var(--card2);border:1px solid var(--border-strong);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -162,6 +172,16 @@ textarea{min-height:56px;resize:vertical;}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="lightbox-overlay" id="lightbox">
+  <div class="lightbox-close" onclick="closeLightbox()">×</div>
+  <img class="lightbox-img" id="lightbox-img" src="">
+  <div class="lightbox-bar">
+    <div class="lightbox-nav" id="lightbox-prev" onclick="lightboxPrev()">‹</div>
+    <div class="lightbox-count" id="lightbox-count"></div>
+    <div class="lightbox-nav" id="lightbox-next" onclick="lightboxNext()">›</div>
+  </div>
+</div>
 
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2u9jaU8BbPQ8FDGaBqF65pB8RUbOfsYF3SgaaZEz8xNh82C--cV8AY0VGfwNcp45c/exec';
@@ -324,7 +344,10 @@ function renderList(){
 function renderItem(r){
   const isOpen = openRow === r.row;
   const photos = [r['현장사진(정면)'], r['현장사진(원면)']].filter(Boolean);
-  const photoHtml = photos.length ? `<div class="thumb-row">${photos.map(u=>`<img src="${escapeHtml(u)}">`).join('')}</div>` : '';
+  const photosJson = encodeURIComponent(JSON.stringify(photos));
+  const photoHtml = photos.length
+    ? `<div class="photo-thumb-row">${photos.map((u,idx)=>`<img src="${escapeHtml(u)}" onclick="event.stopPropagation(); openLightbox('${photosJson}', ${idx})">`).join('')}</div>`
+    : '';
 
   return `
     <div class="item" onclick="toggleItem(${r.row})">
@@ -457,6 +480,60 @@ async function saveEdit(row){
 }
 
 document.getElementById('search').addEventListener('input', renderList);
+
+let lightboxPhotos = [];
+let lightboxIndex = 0;
+function openLightbox(photosJson, startIndex){
+  lightboxPhotos = JSON.parse(decodeURIComponent(photosJson));
+  if(lightboxPhotos.length===0) return;
+  lightboxIndex = startIndex;
+  const img = document.getElementById('lightbox-img');
+  img.style.opacity = '';
+  img.style.transform = '';
+  document.getElementById('lightbox').classList.add('show');
+  const multi = lightboxPhotos.length>1;
+  document.getElementById('lightbox-prev').style.display = multi ? '' : 'none';
+  document.getElementById('lightbox-next').style.display = multi ? '' : 'none';
+  document.getElementById('lightbox-count').style.display = multi ? '' : 'none';
+  updateLightboxDOM();
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('show');
+}
+function lightboxPrev(){
+  lightboxIndex = (lightboxIndex - 1 + lightboxPhotos.length) % lightboxPhotos.length;
+  updateLightboxDOM(true);
+}
+function lightboxNext(){
+  lightboxIndex = (lightboxIndex + 1) % lightboxPhotos.length;
+  updateLightboxDOM(true);
+}
+function updateLightboxDOM(crossfade){
+  const img = document.getElementById('lightbox-img');
+  const counter = document.getElementById('lightbox-count');
+  if(crossfade){
+    img.style.opacity = 0;
+    img.style.transform = 'scale(0.97)';
+    setTimeout(()=>{
+      img.src = lightboxPhotos[lightboxIndex];
+      counter.textContent = (lightboxIndex+1)+' / '+lightboxPhotos.length;
+      img.style.opacity = 1;
+      img.style.transform = 'scale(1)';
+    }, 160);
+  }else{
+    img.src = lightboxPhotos[lightboxIndex];
+    counter.textContent = (lightboxIndex+1)+' / '+lightboxPhotos.length;
+  }
+}
+document.getElementById('lightbox').addEventListener('click', (e)=>{
+  if(e.target.id==='lightbox') closeLightbox();
+});
+document.addEventListener('keydown', (e)=>{
+  if(!document.getElementById('lightbox').classList.contains('show')) return;
+  if(e.key==='Escape') closeLightbox();
+  if(e.key==='ArrowLeft') lightboxPrev();
+  if(e.key==='ArrowRight') lightboxNext();
+});
 
 loadRows();
 </script>
